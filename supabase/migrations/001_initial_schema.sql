@@ -22,9 +22,13 @@ create table if not exists public.todos (
 alter table public.profiles enable row level security;
 alter table public.todos enable row level security;
 
--- 一般使用者只能修改自己的 display_name，不能把 role 改成 admin。
-revoke update on table public.profiles from authenticated;
+-- 明確授權需要的最小權限；不依賴「Automatically expose new tables」。
+revoke all on table public.profiles from anon, authenticated;
+revoke all on table public.todos from anon, authenticated;
+grant usage on schema public to authenticated;
+grant select on table public.profiles to authenticated;
 grant update (display_name) on table public.profiles to authenticated;
+grant select, insert, update, delete on table public.todos to authenticated;
 
 do $$ begin
   create policy "profiles_select_own" on public.profiles
