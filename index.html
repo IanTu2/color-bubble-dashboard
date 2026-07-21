@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#17142d" />
+    <meta name="description" content="一個結合學習、行程與待辦事項的個人空間。" />
+    <title>Bubble Space｜學習與生活儀表板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="moving-screen" aria-hidden="true">
+      <span class="color-field field-one"></span>
+      <span class="color-field field-two"></span>
+      <span class="color-field field-three"></span>
+    </div>
+    <div id="bubbleLayer" class="bubble-layer" aria-hidden="true"></div>
+
+    <button id="drawerTrigger" class="drawer-trigger" type="button" aria-label="開啟選單" aria-controls="sideDrawer" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <aside id="sideDrawer" class="side-drawer" aria-label="主要選單" aria-hidden="true">
+      <div class="drawer-head">
+        <div class="brand-mark">B</div>
+        <div>
+          <p class="eyebrow">PERSONAL SPACE</p>
+          <h2>Bubble Space</h2>
+        </div>
+        <button id="drawerClose" class="icon-button" type="button" aria-label="關閉選單">×</button>
+      </div>
+
+      <nav id="memberNav" class="member-nav" hidden>
+        <details class="nav-accordion">
+          <summary><span data-i18n="learning">學習</span><span class="chevron">⌄</span></summary>
+          <div class="accordion-body">
+            <details class="nav-accordion nested">
+              <summary><span data-i18n="english">英文</span><span class="chevron">⌄</span></summary>
+              <div class="accordion-body sub-links">
+                <button type="button" data-section="vocabulary" data-i18n="vocabulary">單字</button>
+                <button type="button" data-section="englishGame" data-i18n="game">遊戲</button>
+              </div>
+            </details>
+            <button class="nav-single" type="button" data-section="math" data-i18n="math">數學</button>
+          </div>
+        </details>
+        <details class="nav-accordion">
+          <summary><span data-i18n="games">遊戲</span><span class="chevron">⌄</span></summary>
+          <div class="accordion-body sub-links">
+            <button type="button" data-section="gamesSoon" data-i18n="comingSoon">即將推出</button>
+          </div>
+        </details>
+      </nav>
+
+      <div id="guestDrawerNote" class="guest-drawer-note">
+        <span class="note-orb">✦</span>
+        <p data-i18n="loginToUnlock">登入後即可使用學習選單、月曆與待辦事項。</p>
+      </div>
+
+      <div class="language-control">
+        <span data-i18n="language">語言</span>
+        <div class="segmented" role="group" aria-label="語言切換">
+          <button class="language-option active" type="button" data-lang="zh">中文</button>
+          <button class="language-option" type="button" data-lang="en">EN</button>
+        </div>
+      </div>
+    </aside>
+    <button id="drawerBackdrop" class="drawer-backdrop" type="button" aria-label="關閉選單" hidden></button>
+
+    <header class="topbar">
+      <div id="statusPill" class="status-pill"><span></span><span data-i18n="guestMode">訪客模式</span></div>
+      <div class="profile-area">
+        <button id="profileButton" class="profile-button" type="button" aria-label="帳號選單" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm7.2 8.5a7.2 7.2 0 0 0-14.4 0" /></svg>
+          <span id="profileBadge" hidden></span>
+        </button>
+        <div id="profileMenu" class="profile-menu" hidden>
+          <div id="profileSummary" class="profile-summary"></div>
+          <button id="logoutButton" class="menu-action danger" type="button" data-i18n="logout">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card" aria-labelledby="heroGreeting">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <p id="heroGreeting" class="hero-kicker" data-i18n="welcome">歡迎來到你的個人空間</p>
+        <time id="clock" class="clock" datetime="">00:00</time>
+        <p id="date" class="date">載入日期中…</p>
+        <div class="hero-footer">
+          <span class="weather-dot"></span>
+          <span data-i18n="makeTodayCount">讓今天成為有進展的一天</span>
+        </div>
+      </section>
+
+      <section id="memberDashboard" class="member-dashboard" hidden aria-label="個人儀表板">
+        <article id="calendarCard" class="dashboard-card calendar-card" tabindex="0" role="button" aria-label="開啟月曆詳細資訊">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow" data-i18n="calendar">月曆</p>
+              <h2 id="calendarMonth">2026 年 7 月</h2>
+            </div>
+            <button id="openCalendar" class="round-arrow" type="button" aria-label="放大月曆">↗</button>
+          </div>
+          <div id="miniCalendar" class="mini-calendar"></div>
+        </article>
+
+        <article id="todoCard" class="dashboard-card todo-card" tabindex="0" role="button" aria-label="開啟待辦事項詳細資訊">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow" data-i18n="toDo">待辦事項</p>
+              <h2 data-i18n="upcoming">即將到來</h2>
+            </div>
+            <button id="openTodos" class="round-arrow" type="button" aria-label="放大待辦事項">↗</button>
+          </div>
+          <div id="todoBuckets" class="todo-buckets"></div>
+          <div id="todoPreview" class="todo-preview"></div>
+        </article>
+      </section>
+    </main>
+
+    <button id="robotButton" class="robot-button" type="button" aria-label="AI 助理" hidden>
+      <span class="robot-antenna"></span>
+      <span class="robot-face"><i></i><i></i></span>
+      <span class="robot-label">AI</span>
+    </button>
+
+    <dialog id="authDialog" class="modal auth-modal">
+      <div class="modal-shell">
+        <button class="modal-close" type="button" data-close-dialog aria-label="關閉">×</button>
+        <div class="auth-intro">
+          <div class="auth-orbit"><span></span><span></span><strong>B</strong></div>
+          <p class="eyebrow">BUBBLE SPACE</p>
+          <h2 data-i18n="accountTitle">開始你的專屬空間</h2>
+          <p data-i18n="accountSubtitle">登入後，行程、待辦與學習進度都會留在這裡。</p>
+        </div>
+        <div class="auth-content">
+          <div class="auth-tabs" role="tablist">
+            <button class="auth-tab active" id="loginTab" type="button" role="tab" aria-selected="true" data-auth-tab="login" data-i18n="login">登入</button>
+            <button class="auth-tab" id="registerTab" type="button" role="tab" aria-selected="false" data-auth-tab="register" data-i18n="register">註冊</button>
+          </div>
+
+          <form id="loginForm" class="auth-form">
+            <label><span data-i18n="email">Email</span><input id="loginEmail" type="email" autocomplete="email" required placeholder="name@example.com" /></label>
+            <label><span data-i18n="password">密碼</span><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="至少 8 個字元" /></label>
+            <button class="primary-button" type="submit" data-i18n="login">登入</button>
+          </form>
+
+          <form id="registerForm" class="auth-form" hidden>
+            <div id="registerFields">
+              <label><span data-i18n="displayName">顯示名稱</span><input id="registerName" type="text" autocomplete="name" maxlength="40" required placeholder="你的名字" /></label>
+              <label><span data-i18n="email">Email</span><input id="registerEmail" type="email" autocomplete="email" required placeholder="name@example.com" /></label>
+              <label><span data-i18n="password">密碼</span><input id="registerPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="至少 8 個字元" /></label>
+              <button class="primary-button" type="submit" data-i18n="sendCode">寄送驗證碼</button>
+            </div>
+            <div id="otpFields" hidden>
+              <p class="form-note" id="otpHint"></p>
+              <label><span data-i18n="verificationCode">6 位數驗證碼</span><input id="otpCode" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" /></label>
+              <button id="verifyOtpButton" class="primary-button" type="button" data-i18n="verifyAndCreate">驗證並建立帳號</button>
+              <button id="backToRegister" class="text-button" type="button" data-i18n="back">返回修改資料</button>
+            </div>
+          </form>
+
+          <div id="authMessage" class="auth-message" role="status" hidden></div>
+          <div id="previewAccess" class="preview-access">
+            <span data-i18n="previewMode">目前可先預覽登入後畫面</span>
+            <button id="previewLogin" class="secondary-button" type="button" data-i18n="previewLogin">體驗登入</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="detailDialog" class="modal detail-modal">
+      <div class="detail-shell">
+        <button class="modal-close" type="button" data-close-dialog aria-label="關閉">×</button>
+        <div id="detailContent"></div>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.55.0/dist/umd/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>
