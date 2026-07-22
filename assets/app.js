@@ -410,7 +410,7 @@
   }
 
   async function verifyRegistration() {
-    const token = $("#otpCode").value.trim();
+    const token = $("#otpCode").value.replace(/\D/g, "");
     if (!registerDraft || !/^\d{6,10}$/.test(token)) { showAuthMessage(t("invalidOtp")); return; }
     const { data, error } = await client.auth.verifyOtp({ email: registerDraft.email, token, type: "email" });
     if (error) { showAuthMessage(error.message); return; }
