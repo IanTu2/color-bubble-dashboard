@@ -26,7 +26,9 @@
   const translations = {
     zh: {
       learning: "學習", english: "英文", vocabulary: "單字", game: "遊戲", games: "遊戲", math: "數學",
-      comingSoon: "即將推出", loginToUnlock: "登入後即可使用學習選單、月曆與待辦事項。", language: "語言",
+      comingSoon: "即將推出", loginToUnlock: "登入後即可使用學習選單、月曆與待辦事項。", language: "語言", settings: "設定",
+      settingsTitle: "顯示設定", settingsSubtitle: "調整適合你的語言與閱讀大小。", fontSize: "字體大小",
+      fontSizeHint: "設定會保存在這個瀏覽器中。", resetFontSize: "恢復標準大小",
       guestMode: "訪客模式", memberMode: "個人空間", logout: "登出", welcome: "歡迎來到你的個人空間",
       makeTodayCount: "讓今天成為有進展的一天", calendar: "月曆", toDo: "待辦事項", upcoming: "即將到來",
       accountTitle: "開始你的專屬空間", accountSubtitle: "登入後，行程、待辦與學習進度都會留在這裡。",
@@ -46,7 +48,9 @@
     },
     en: {
       learning: "Learning", english: "English", vocabulary: "Vocabulary", game: "Game", games: "Games", math: "Math",
-      comingSoon: "Coming soon", loginToUnlock: "Sign in to unlock learning, calendar, and to-dos.", language: "Language",
+      comingSoon: "Coming soon", loginToUnlock: "Sign in to unlock learning, calendar, and to-dos.", language: "Language", settings: "Settings",
+      settingsTitle: "Display settings", settingsSubtitle: "Choose your language and preferred reading size.", fontSize: "Font size",
+      fontSizeHint: "This setting is saved in this browser.", resetFontSize: "Reset to standard",
       guestMode: "Guest mode", memberMode: "Personal space", logout: "Log out", welcome: "Welcome to your personal space",
       makeTodayCount: "Make today a day of progress", calendar: "Calendar", toDo: "To-do", upcoming: "Coming up",
       accountTitle: "Enter your personal space", accountSubtitle: "Your schedule, to-dos, and learning progress live here.",
@@ -67,6 +71,7 @@
   };
 
   let lang = localStorage.getItem("bubble-language") || "zh";
+  let fontSize = Number(localStorage.getItem("bubble-font-size")) || 100;
   let currentUser = null;
   let previewSession = localStorage.getItem("bubble-preview-session") === "true";
   let calendarCursor = new Date();
@@ -89,6 +94,19 @@
     renderCalendarCard();
     renderTodoCard();
     if ($("#detailDialog").open) $("#detailDialog").close();
+  }
+
+  function setFontSize(next) {
+    fontSize = Math.min(125, Math.max(85, Number(next) || 100));
+    document.documentElement.style.fontSize = `${fontSize}%`;
+    localStorage.setItem("bubble-font-size", String(fontSize));
+    $("#fontSizeRange").value = String(fontSize);
+    $("#fontSizeValue").value = `${fontSize}%`;
+  }
+
+  function openSettings() {
+    closeDrawer();
+    $("#settingsDialog").showModal();
   }
 
   function updateClock() {
@@ -454,6 +472,9 @@
       $("#registerFields").hidden = false; $("#otpFields").hidden = true; showAuthMessage("");
     });
     $("#previewLogin").addEventListener("click", previewLogin);
+    $("#settingsButton").addEventListener("click", openSettings);
+    $("#fontSizeRange").addEventListener("input", (event) => setFontSize(event.target.value));
+    $("#fontSizeReset").addEventListener("click", () => setFontSize(100));
     $$("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => switchAuthTab(button.dataset.authTab)));
     $$(".language-option").forEach((button) => button.addEventListener("click", () => setLanguage(button.dataset.lang)));
     $$("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
@@ -492,6 +513,7 @@
 
   createBubbles();
   bindEvents();
+  setFontSize(fontSize);
   setLanguage(lang);
   updateClock();
   setInterval(updateClock, 1000);
