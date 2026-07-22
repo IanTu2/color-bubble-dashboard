@@ -1,6 +1,6 @@
 # Bubble Space
 
-圓角、動態彩色背景的個人學習與生活儀表板。網站支援繁體中文／英文、帳號登入、Email 六位數驗證碼註冊、月曆、待辦事項，以及預留的學習、遊戲與 AI 助理區。
+圓角、動態彩色背景的個人學習與生活儀表板。網站支援繁體中文／英文、帳號登入、Email 驗證碼註冊、月曆、待辦事項，以及預留的學習、遊戲與 AI 助理區。
 
 網站預計發布於：<https://iantu2.github.io/color-bubble-dashboard/>
 
@@ -23,7 +23,7 @@ GitHub Pages 是靜態網站，寄信與帳號資料由 Supabase 安全處理。
 1. 在 <https://supabase.com> 建立專案。
 2. 打開 **SQL Editor**，執行 `supabase/migrations/001_initial_schema.sql`。
 3. 到 **Authentication → Email Templates**：
-   - 在 **Confirm signup** 範本中顯示 `{{ .Token }}`，讓新使用者收到六位數驗證碼。
+   - 在 **Confirm signup** 範本中顯示 `{{ .Token }}`，讓新使用者收到數字驗證碼。
    - 建議主旨改成「Bubble Space 驗證碼」。
 4. 到 **Project Settings → API** 複製 Project URL 與 publishable/anon key。
 5. 修改 `config.js`：
