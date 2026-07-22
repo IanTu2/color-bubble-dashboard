@@ -281,7 +281,10 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible, summary:foc
 .robot-button { position: fixed; right: clamp(18px, 4vw, 54px); bottom: 26px; z-index: 19; display: grid; place-items: center; width: 68px; height: 68px; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 25px; background: linear-gradient(145deg, rgba(28,23,57,.92), rgba(16,14,32,.88)); box-shadow: 0 20px 48px rgba(8,6,24,.35); cursor: pointer; backdrop-filter: blur(18px); transition: transform .25s; }
 .robot-button:hover { transform: translateY(-4px) rotate(-2deg); }
 .robot-face { position: relative; display: flex; align-items: center; justify-content: space-evenly; width: 39px; height: 31px; border: 2px solid #c5b5ff; border-radius: 12px; background: rgba(156,124,255,.14); }
-.robot-face i { width: 5px; height: 7px; border-radius: 3px; back◊mm¢Gß≤⁄Óù∆≠y›: -5px; padding: 3px 6px; border-radius: 8px; color: #17142d; background: var(--yellow); font-size: .52rem; font-weight: 800; }
+.robot-face i { width: 5px; height: 7px; border-radius: 3px; background: var(--aqua); box-shadow: 0 0 8px var(--aqua); }
+.robot-antenna { position: absolute; top: 10px; width: 2px; height: 8px; background: #c5b5ff; }
+.robot-antenna::before { content: ""; position: absolute; top: -4px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); }
+.robot-label { position: absolute; right: -4px; bottom: -5px; padding: 3px 6px; border-radius: 8px; color: #17142d; background: var(--yellow); font-size: .52rem; font-weight: 800; }
 
 .modal { width: 100%; max-width: none; height: 100%; max-height: none; padding: 18px; border: 0; background: rgba(7,5,18,.56); color: var(--ink); backdrop-filter: blur(12px); }
 .modal::backdrop { background: transparent; }
