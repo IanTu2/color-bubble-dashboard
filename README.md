@@ -38,14 +38,9 @@ window.APP_CONFIG = {
 
 `publishable/anon key` 本來就是提供前端使用，真正的資料安全由 SQL 內的 Row Level Security 保護。絕對不要把 `service_role key` 放到 GitHub。
 
-## 建立免驗證信的 Admin
+## Admin 帳號
 
-為了避免任何人只要輸入 Admin Email 就取得權限，免驗證必須在後台完成：
-
-1. 開啟 Supabase **Authentication → Users → Add user → Create new user**。
-2. Email 輸入 `wenchang10802270@gmail.com`，設定只有本人知道的密碼。
-3. 勾選 **Auto Confirm User** 後建立。
-4. 回網站使用登入頁即可；migration 會自動把此 Email 的 profile role 設為 `admin`。
+`wenchang10802270@gmail.com` 與一般帳號使用相同的 Email 驗證碼註冊流程。註冊成功後，migration 會自動把此 Email 的 `profiles.role` 記錄為 `admin`；目前 Admin 與一般會員使用相同功能。
 
 ## 保護既有 DB 資料
 
@@ -53,4 +48,3 @@ window.APP_CONFIG = {
 - 不使用 `drop table`、`truncate` 或無條件 `delete`。
 - schema 使用 `if not exists`，功能更新不需要清空資料庫。
 - 任何正式 DB 變更前先備份，再從測試專案驗證。
-
