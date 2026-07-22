@@ -2,6 +2,5 @@
 // 建立 Supabase 專案後，把以下兩個空字串換成專案值，即可開啟真實帳號與資料同步。
 window.APP_CONFIG = {
   SUPABASE_URL: "https://sxxtebrzocxgtldvdamn.supabase.co",
-  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yqAWL9yzDkbNHXra3gm8sg_4NHRfhxX",
-  ADMIN_EMAIL: "wenchang10802270@gmail.com"
+  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yqAWL9yzDkbNHXra3gm8sg_4NHRfhxX"
 };
