@@ -31,14 +31,14 @@
       makeTodayCount: "讓今天成為有進展的一天", calendar: "月曆", toDo: "待辦事項", upcoming: "即將到來",
       accountTitle: "開始你的專屬空間", accountSubtitle: "登入後，行程、待辦與學習進度都會留在這裡。",
       login: "登入", register: "註冊", email: "Email", password: "密碼", displayName: "顯示名稱",
-      sendCode: "寄送驗證碼", verificationCode: "6 位數驗證碼", verifyAndCreate: "驗證並建立帳號", back: "返回修改資料",
+      sendCode: "寄送驗證碼", verificationCode: "Email 驗證碼", verifyAndCreate: "驗證並建立帳號", back: "返回修改資料",
       previewMode: "尚未設定雲端服務，可先預覽登入後畫面", previewLogin: "體驗登入", today: "今日", twoDays: "兩天內",
       sevenDays: "七天內", thirtyDays: "30 天內", noTasks: "目前沒有待辦事項", addTask: "新增待辦", taskName: "待辦名稱",
       dueDate: "截止日期", add: "新增", aiSoon: "AI 助理已就位，對話功能會在下一階段開放。", previewUser: "預覽使用者",
       previewNotice: "目前是預覽模式，資料只會保存在這台裝置。", loginSuccess: "登入成功。", logoutSuccess: "已安全登出。",
       configNeeded: "帳號服務尚未設定。請先完成 README 的 Supabase 設定，或使用體驗登入。",
       codeSent: "驗證碼已寄到 {email}，請查看收件匣與垃圾郵件。", accountCreated: "帳號建立完成，歡迎加入！",
-      invalidOtp: "請輸入 6 位數驗證碼。",
+      invalidOtp: "請輸入 Email 中的數字驗證碼。",
       calendarDetail: "完整月曆", calendarHint: "有色標記代表當天有待辦事項。", todoDetail: "所有待辦事項",
       todoHint: "新增、完成或刪除項目；雲端啟用後會自動同步。", sectionSoon: "這個學習區已預留完成，內容將在下一次更新加入。",
       delete: "刪除", taskAdded: "待辦事項已新增。", taskDeleted: "待辦事項已刪除。", saveFailed: "儲存失敗，請稍後再試。",
@@ -51,14 +51,14 @@
       makeTodayCount: "Make today a day of progress", calendar: "Calendar", toDo: "To-do", upcoming: "Coming up",
       accountTitle: "Enter your personal space", accountSubtitle: "Your schedule, to-dos, and learning progress live here.",
       login: "Log in", register: "Register", email: "Email", password: "Password", displayName: "Display name",
-      sendCode: "Send verification code", verificationCode: "6-digit verification code", verifyAndCreate: "Verify & create account", back: "Edit details",
+      sendCode: "Send verification code", verificationCode: "Email verification code", verifyAndCreate: "Verify & create account", back: "Edit details",
       previewMode: "Cloud service is not configured; preview the member view", previewLogin: "Preview login", today: "Today", twoDays: "Within 2 days",
       sevenDays: "Within 7 days", thirtyDays: "Within 30 days", noTasks: "No to-dos yet", addTask: "Add to-do", taskName: "Task name",
       dueDate: "Due date", add: "Add", aiSoon: "Your AI assistant is ready. Chat will arrive in the next update.", previewUser: "Preview user",
       previewNotice: "Preview mode: data is saved only on this device.", loginSuccess: "You're signed in.", logoutSuccess: "You're safely logged out.",
       configNeeded: "Account service is not configured. Follow the Supabase setup in README, or use preview login.",
       codeSent: "We sent a code to {email}. Check your inbox and spam folder.", accountCreated: "Your account is ready. Welcome!",
-      invalidOtp: "Enter the 6-digit code.",
+      invalidOtp: "Enter the numeric code from the email.",
       calendarDetail: "Full calendar", calendarHint: "Colored labels indicate due tasks.", todoDetail: "All to-dos",
       todoHint: "Add, complete, or delete items. Cloud sync starts when configured.", sectionSoon: "This learning area is reserved and ready for content in a future update.",
       delete: "Delete", taskAdded: "To-do added.", taskDeleted: "To-do deleted.", saveFailed: "Could not save. Please try again.",
@@ -411,7 +411,7 @@
 
   async function verifyRegistration() {
     const token = $("#otpCode").value.trim();
-    if (!registerDraft || !/^\d{6}$/.test(token)) { showAuthMessage(t("invalidOtp")); return; }
+    if (!registerDraft || !/^\d{6,10}$/.test(token)) { showAuthMessage(t("invalidOtp")); return; }
     const { data, error } = await client.auth.verifyOtp({ email: registerDraft.email, token, type: "email" });
     if (error) { showAuthMessage(error.message); return; }
     const update = await client.auth.updateUser({ password: registerDraft.password, data: { display_name: registerDraft.displayName } });
