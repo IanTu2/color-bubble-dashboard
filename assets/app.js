@@ -43,6 +43,7 @@
       invalidOtp: "請輸入 Email 中的數字驗證碼。",
       calendarDetail: "完整月曆", calendarHint: "有色標記代表當天有待辦事項。", todoDetail: "所有待辦事項",
       todoHint: "新增、完成或刪除項目；雲端啟用後會自動同步。", sectionSoon: "這個學習區已預留完成，內容將在下一次更新加入。",
+      tasksForDate: "{date} 的待辦", taskCount: "共 {count} 項", moreTasks: "還有 {count} 項", backToCalendar: "返回月曆",
       delete: "刪除", taskAdded: "待辦事項已新增。", taskDeleted: "待辦事項已刪除。", saveFailed: "儲存失敗，請稍後再試。",
       weekdays: ["日", "一", "二", "三", "四", "五", "六"]
     },
@@ -65,6 +66,7 @@
       invalidOtp: "Enter the numeric code from the email.",
       calendarDetail: "Full calendar", calendarHint: "Colored labels indicate due tasks.", todoDetail: "All to-dos",
       todoHint: "Add, complete, or delete items. Cloud sync starts when configured.", sectionSoon: "This learning area is reserved and ready for content in a future update.",
+      tasksForDate: "To-dos for {date}", taskCount: "{count} items", moreTasks: "{count} more", backToCalendar: "Back to calendar",
       delete: "Delete", taskAdded: "To-do added.", taskDeleted: "To-do deleted.", saveFailed: "Could not save. Please try again.",
       weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     }
@@ -75,11 +77,32 @@
   let currentUser = null;
   let previewSession = localStorage.getItem("bubble-preview-session") === "true";
   let calendarCursor = new Date();
+  let detailView = "todos";
+  let selectedCalendarDate = null;
   let registerDraft = null;
   let todos = [];
   let toastTimer;
 
   const t = (key) => translations[lang][key] ?? key;
+
+  function openDialog(dialog) {
+    if (!dialog || dialog.open) return;
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute("open", "");
+      dialog.classList.add("dialog-fallback");
+    }
+    document.body.classList.add("dialog-open");
+  }
+
+  function closeDialog(dialog) {
+    if (!dialog) return;
+    if (typeof dialog.close === "function" && dialog.open) dialog.close();
+    else dialog.removeAttribute("open");
+    dialog.classList.remove("dialog-fallback");
+    if (!document.querySelector("dialog[open]")) document.body.classList.remove("dialog-open");
+  }
 
   function setLanguage(next) {
     lang = next;
@@ -93,7 +116,7 @@
     updateClock();
     renderCalendarCard();
     renderTodoCard();
-    if ($("#detailDialog").open) $("#detailDialog").close();
+    if ($("#detailDialog").open) closeDialog($("#detailDialog"));
   }
 
   function setFontSize(next) {
@@ -106,7 +129,7 @@
 
   function openSettings() {
     closeDrawer();
-    $("#settingsDialog").showModal();
+    openDialog($("#settingsDialog"));
   }
 
   function updateClock() {
@@ -184,7 +207,7 @@
       $("#profileButton").setAttribute("aria-expanded", String(!menu.hidden));
       return;
     }
-    $("#authDialog").showModal();
+    openDialog($("#authDialog"));
   }
 
   function getUserName() {
@@ -275,6 +298,13 @@
     return new Intl.DateTimeFormat(lang === "zh" ? "zh-TW" : "en-US", { year: "numeric", month: "long" }).format(date);
   }
 
+  function formatDateLabel(value) {
+    const date = typeof value === "string" ? new Date(`${value}T00:00:00`) : value;
+    return new Intl.DateTimeFormat(lang === "zh" ? "zh-TW" : "en-US", {
+      year: "numeric", month: "long", day: "numeric", weekday: "short"
+    }).format(date);
+  }
+
   function calendarCells(date, detailed = false) {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -287,8 +317,19 @@
       const current = dateKey(new Date(year, month, number));
       const dailyTasks = todos.filter((todo) => todo.due_date === current && !todo.completed);
       const classes = [current === today ? "today" : "", dailyTasks.length ? "has-task" : ""].filter(Boolean).join(" ");
-      const taskTags = detailed ? dailyTasks.slice(0, 2).map((todo) => `<small class="calendar-task-dot">${escapeHtml(todo.title)}</small>`).join("") : "";
-      cells.push(`<span class="${detailed ? "day " : ""}${classes}">${number}${taskTags}</span>`);
+      const visibleTasks = detailed ? dailyTasks.slice(0, 2).map((todo) => `<small class="calendar-task-dot">${escapeHtml(todo.title)}</small>`).join("") : "";
+      const moreTasks = detailed && dailyTasks.length > 2
+        ? `<small class="calendar-more">${escapeHtml(t("moreTasks").replace("{count}", String(dailyTasks.length - 2)))}</small>`
+        : "";
+      const taskCount = detailed && dailyTasks.length
+        ? `<small class="calendar-task-count" aria-hidden="true">${dailyTasks.length}</small>`
+        : "";
+      if (detailed) {
+        const ariaLabel = `${formatDateLabel(current)}，${t("taskCount").replace("{count}", String(dailyTasks.length))}`;
+        cells.push(`<button class="day ${classes}" type="button" data-calendar-date="${current}" aria-label="${escapeHtml(ariaLabel)}"><span class="day-number">${number}</span>${taskCount}${visibleTasks}${moreTasks}</button>`);
+      } else {
+        cells.push(`<span class="${classes}">${number}</span>`);
+      }
     }
     return [...weekdayCells, ...cells].join("");
   }
@@ -301,8 +342,10 @@
 
   function openCalendarDetail() {
     calendarCursor = new Date();
+    detailView = "calendar";
+    selectedCalendarDate = null;
     renderCalendarDetail();
-    $("#detailDialog").showModal();
+    openDialog($("#detailDialog"));
   }
 
   function renderCalendarDetail() {
@@ -317,24 +360,28 @@
       calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + Number(button.dataset.monthStep), 1);
       renderCalendarDetail();
     }));
+    $$('[data-calendar-date]', $("#detailContent")).forEach((button) => button.addEventListener("click", () => openDayDetail(button.dataset.calendarDate)));
   }
 
   function openTodoDetail() {
+    detailView = "todos";
+    selectedCalendarDate = null;
     renderTodoDetail();
-    $("#detailDialog").showModal();
+    openDialog($("#detailDialog"));
   }
 
-  function renderTodoDetail() {
-    const ordered = [...todos].sort((a, b) => Number(a.completed) - Number(b.completed) || a.due_date.localeCompare(b.due_date));
-    $("#detailContent").innerHTML = `
-      <p class="eyebrow">${escapeHtml(t("toDo"))}</p>
-      <h2 class="detail-title">${escapeHtml(t("todoDetail"))}</h2>
-      <p class="detail-subtitle">${escapeHtml(t("todoHint"))}</p>
+  function todoFormMarkup(dueDate = dateKey(new Date())) {
+    return `
       <form id="todoForm" class="todo-form">
         <input id="todoTitle" aria-label="${escapeHtml(t("taskName"))}" maxlength="100" required placeholder="${escapeHtml(t("taskName"))}" />
-        <input id="todoDue" aria-label="${escapeHtml(t("dueDate"))}" type="date" required min="${dateKey(new Date())}" value="${dateKey(new Date())}" />
+        <input id="todoDue" aria-label="${escapeHtml(t("dueDate"))}" type="date" required value="${escapeHtml(dueDate)}" />
         <button class="primary-button" type="submit">${escapeHtml(t("add"))}</button>
-      </form>
+      </form>`;
+  }
+
+  function todoListMarkup(items) {
+    const ordered = [...items].sort((a, b) => Number(a.completed) - Number(b.completed) || a.due_date.localeCompare(b.due_date));
+    return `
       <div class="full-todo-list">
         ${ordered.length ? ordered.map((todo) => `
           <div class="full-todo ${todo.completed ? "done" : ""}">
@@ -344,9 +391,52 @@
             <button class="delete-todo" type="button" data-delete-todo="${escapeHtml(todo.id)}" aria-label="${escapeHtml(t("delete"))}">×</button>
           </div>`).join("") : `<div class="empty-state">${escapeHtml(t("noTasks"))}</div>`}
       </div>`;
+  }
+
+  function bindTodoEditor() {
     $("#todoForm").addEventListener("submit", addTodo);
     $$('[data-toggle-todo]', $("#detailContent")).forEach((button) => button.addEventListener("click", () => toggleTodo(button.dataset.toggleTodo)));
     $$('[data-delete-todo]', $("#detailContent")).forEach((button) => button.addEventListener("click", () => deleteTodo(button.dataset.deleteTodo)));
+  }
+
+  function renderTodoDetail() {
+    $("#detailContent").innerHTML = `
+      <p class="eyebrow">${escapeHtml(t("toDo"))}</p>
+      <h2 class="detail-title">${escapeHtml(t("todoDetail"))}</h2>
+      <p class="detail-subtitle">${escapeHtml(t("todoHint"))}</p>
+      ${todoFormMarkup()}
+      ${todoListMarkup(todos)}`;
+    bindTodoEditor();
+  }
+
+  function openDayDetail(date) {
+    detailView = "day";
+    selectedCalendarDate = date;
+    renderDayDetail();
+  }
+
+  function renderDayDetail() {
+    const dailyTodos = todos.filter((todo) => todo.due_date === selectedCalendarDate);
+    const title = t("tasksForDate").replace("{date}", formatDateLabel(selectedCalendarDate));
+    $("#detailContent").innerHTML = `
+      <button class="detail-back" type="button" data-back-calendar>← ${escapeHtml(t("backToCalendar"))}</button>
+      <p class="eyebrow">${escapeHtml(t("calendar"))}</p>
+      <h2 class="detail-title">${escapeHtml(title)}</h2>
+      <p class="detail-subtitle">${escapeHtml(t("taskCount").replace("{count}", String(dailyTodos.length)))}</p>
+      ${todoFormMarkup(selectedCalendarDate)}
+      ${todoListMarkup(dailyTodos)}`;
+    $("[data-back-calendar]", $("#detailContent")).addEventListener("click", () => {
+      detailView = "calendar";
+      selectedCalendarDate = null;
+      renderCalendarDetail();
+    });
+    bindTodoEditor();
+  }
+
+  function refreshDetailContent() {
+    if (detailView === "calendar") renderCalendarDetail();
+    else if (detailView === "day" && selectedCalendarDate) renderDayDetail();
+    else renderTodoDetail();
   }
 
   async function addTodo(event) {
@@ -354,15 +444,38 @@
     const title = $("#todoTitle").value.trim();
     const dueDate = $("#todoDue").value;
     if (!title || !dueDate) return;
-    if (previewSession) {
-      todos.push({ id: `local-${Date.now()}`, title, due_date: dueDate, completed: false });
-      persistPreviewTodos();
-    } else {
-      const { data, error } = await client.from("todos").insert({ user_id: currentUser.id, title, due_date: dueDate }).select("id,title,due_date,completed,created_at").single();
-      if (error) { showToast(t("saveFailed")); return; }
-      todos.push(data);
+    const submitButton = event.submitter;
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.setAttribute("aria-busy", "true");
     }
-    renderTodoDetail(); renderTodoCard(); renderCalendarCard(); showToast(t("taskAdded"));
+    try {
+      if (previewSession) {
+        todos.push({ id: `local-${Date.now()}`, title, due_date: dueDate, completed: false });
+        persistPreviewTodos();
+      } else {
+        if (!client || !currentUser) throw new Error(t("saveFailed"));
+        const { data, error } = await client.from("todos")
+          .insert([{ user_id: currentUser.id, title, due_date: dueDate }])
+          .select("id,title,due_date,completed,created_at")
+          .single();
+        if (error) throw error;
+        todos.push(data);
+      }
+      if (detailView === "day") selectedCalendarDate = dueDate;
+      refreshDetailContent();
+      renderTodoCard();
+      renderCalendarCard();
+      showToast(t("taskAdded"));
+    } catch (error) {
+      console.error("Unable to add todo", error);
+      showToast(error?.message && error.message !== t("saveFailed") ? `${t("saveFailed")} ${error.message}` : t("saveFailed"));
+    } finally {
+      if (submitButton?.isConnected) {
+        submitButton.disabled = false;
+        submitButton.removeAttribute("aria-busy");
+      }
+    }
   }
 
   async function toggleTodo(id) {
@@ -370,26 +483,29 @@
     if (!todo) return;
     const next = !todo.completed;
     if (!previewSession) {
-      const { error } = await client.from("todos").update({ completed: next }).eq("id", id);
+      if (!client || !currentUser) { showToast(t("saveFailed")); return; }
+      const { error } = await client.from("todos").update({ completed: next }).eq("id", id).eq("user_id", currentUser.id);
       if (error) { showToast(t("saveFailed")); return; }
     }
     todo.completed = next;
-    persistPreviewTodos(); renderTodoDetail(); renderTodoCard(); renderCalendarCard();
+    persistPreviewTodos(); refreshDetailContent(); renderTodoCard(); renderCalendarCard();
   }
 
   async function deleteTodo(id) {
     if (!previewSession) {
-      const { error } = await client.from("todos").delete().eq("id", id);
+      if (!client || !currentUser) { showToast(t("saveFailed")); return; }
+      const { error } = await client.from("todos").delete().eq("id", id).eq("user_id", currentUser.id);
       if (error) { showToast(t("saveFailed")); return; }
     }
     todos = todos.filter((item) => String(item.id) !== String(id));
-    persistPreviewTodos(); renderTodoDetail(); renderTodoCard(); renderCalendarCard(); showToast(t("taskDeleted"));
+    persistPreviewTodos(); refreshDetailContent(); renderTodoCard(); renderCalendarCard(); showToast(t("taskDeleted"));
   }
 
   function openSection(name) {
     const labels = { vocabulary: t("vocabulary"), englishGame: `${t("english")} · ${t("game")}`, math: t("math"), gamesSoon: t("games") };
     $("#detailContent").innerHTML = `<p class="eyebrow">${escapeHtml(t("learning"))}</p><h2 class="detail-title">${escapeHtml(labels[name] || name)}</h2><div class="coming-soon-panel">${escapeHtml(t("sectionSoon"))}</div>`;
-    $("#detailDialog").showModal();
+    detailView = "section";
+    openDialog($("#detailDialog"));
     closeDrawer();
   }
 
@@ -403,7 +519,7 @@
     if (error) { showAuthMessage(error.message); return; }
     currentUser = data.user;
     previewSession = false;
-    $("#authDialog").close();
+    closeDialog($("#authDialog"));
     renderAuthState();
     showToast(t("loginSuccess"));
   }
@@ -436,7 +552,7 @@
     if (update.error) { showAuthMessage(update.error.message); return; }
     currentUser = update.data.user || data.user;
     registerDraft = null;
-    $("#authDialog").close();
+    closeDialog($("#authDialog"));
     renderAuthState();
     showToast(t("accountCreated"));
   }
@@ -454,7 +570,7 @@
   function previewLogin() {
     previewSession = true;
     localStorage.setItem("bubble-preview-session", "true");
-    $("#authDialog").close();
+    closeDialog($("#authDialog"));
     renderAuthState();
     showToast(t("previewNotice"));
   }
@@ -477,8 +593,14 @@
     $("#fontSizeReset").addEventListener("click", () => setFontSize(100));
     $$("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => switchAuthTab(button.dataset.authTab)));
     $$(".language-option").forEach((button) => button.addEventListener("click", () => setLanguage(button.dataset.lang)));
-    $$("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
-    $$("dialog").forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
+    $$("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => closeDialog(button.closest("dialog"))));
+    $$("dialog").forEach((dialog) => {
+      dialog.addEventListener("click", (event) => { if (event.target === dialog) closeDialog(dialog); });
+      dialog.addEventListener("close", () => {
+        dialog.classList.remove("dialog-fallback");
+        if (!document.querySelector("dialog[open]")) document.body.classList.remove("dialog-open");
+      });
+    });
     [$("#calendarCard"), $("#openCalendar")].forEach((node) => node.addEventListener("click", (event) => { event.stopPropagation(); openCalendarDetail(); }));
     [$("#todoCard"), $("#openTodos")].forEach((node) => node.addEventListener("click", (event) => { event.stopPropagation(); openTodoDetail(); }));
     [$("#calendarCard"), $("#todoCard")].forEach((node) => node.addEventListener("keydown", (event) => {
