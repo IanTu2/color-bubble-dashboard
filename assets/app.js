@@ -44,7 +44,11 @@
       calendarDetail: "完整月曆", calendarHint: "有色標記代表當天有待辦事項。", todoDetail: "所有待辦事項",
       todoHint: "新增、完成或刪除項目；雲端啟用後會自動同步。", sectionSoon: "這個學習區已預留完成，內容將在下一次更新加入。",
       tasksForDate: "{date} 的待辦", taskCount: "共 {count} 項", moreTasks: "還有 {count} 項", backToCalendar: "返回月曆",
-      delete: "刪除", taskAdded: "待辦事項已新增。", taskDeleted: "待辦事項已刪除。", saveFailed: "儲存失敗，請稍後再試。",
+      reminderTime: "提醒時間（選填）", reminder: "提醒", reminderEnabled: "桌面通知已開啟。", reminderDenied: "未取得桌面通知權限，仍會保留站內提醒。",
+      reminderUnsupported: "此瀏覽器不支援桌面通知，仍會保留站內提醒。", enableNotifications: "開啟桌面通知", reminderDue: "提醒：{title}",
+      reminderPendingSetup: "待辦已新增；資料庫升級後才會保存提醒時間。",
+      activeTasks: "進行中", completionHistory: "完成紀錄", completedOn: "完成於 {date}", noCompletedTasks: "目前沒有完成紀錄",
+      delete: "刪除", taskAdded: "待辦事項已新增。", taskDeleted: "待辦事項已刪除。", taskCompleted: "完成紀錄已保存。", saveFailed: "儲存失敗，請稍後再試。",
       weekdays: ["日", "一", "二", "三", "四", "五", "六"]
     },
     en: {
@@ -67,7 +71,11 @@
       calendarDetail: "Full calendar", calendarHint: "Colored labels indicate due tasks.", todoDetail: "All to-dos",
       todoHint: "Add, complete, or delete items. Cloud sync starts when configured.", sectionSoon: "This learning area is reserved and ready for content in a future update.",
       tasksForDate: "To-dos for {date}", taskCount: "{count} items", moreTasks: "{count} more", backToCalendar: "Back to calendar",
-      delete: "Delete", taskAdded: "To-do added.", taskDeleted: "To-do deleted.", saveFailed: "Could not save. Please try again.",
+      reminderTime: "Reminder time (optional)", reminder: "Reminder", reminderEnabled: "Desktop notifications are enabled.", reminderDenied: "Desktop permission was not granted. In-app reminders will still work.",
+      reminderUnsupported: "Desktop notifications are unavailable in this browser. In-app reminders will still work.", enableNotifications: "Enable desktop notifications", reminderDue: "Reminder: {title}",
+      reminderPendingSetup: "To-do added. The reminder will be saved after the database upgrade.",
+      activeTasks: "Active", completionHistory: "Completed", completedOn: "Completed {date}", noCompletedTasks: "No completed items yet",
+      delete: "Delete", taskAdded: "To-do added.", taskDeleted: "To-do deleted.", taskCompleted: "Completion saved.", saveFailed: "Could not save. Please try again.",
       weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     }
   };
@@ -78,10 +86,13 @@
   let previewSession = localStorage.getItem("bubble-preview-session") === "true";
   let calendarCursor = new Date();
   let detailView = "todos";
+  let todoListMode = "active";
   let selectedCalendarDate = null;
   let registerDraft = null;
   let todos = [];
+  let extendedTodoSchema = true;
   let toastTimer;
+  let reminderTimer;
 
   const t = (key) => translations[lang][key] ?? key;
 
@@ -257,14 +268,26 @@
       return;
     }
     if (!client || !currentUser) return;
-    const { data, error } = await client.from("todos").select("id,title,due_date,completed,created_at").order("due_date", { ascending: true });
-    if (error) {
-      showToast(t("saveFailed"));
-      return;
+    const extendedResult = await client.from("todos").select("id,title,due_date,completed,reminder_at,completed_at,created_at,updated_at").order("due_date", { ascending: true });
+    if (extendedResult.error) {
+      const legacyResult = await client.from("todos").select("id,title,due_date,completed,created_at,updated_at").order("due_date", { ascending: true });
+      if (legacyResult.error) {
+        showToast(t("saveFailed"));
+        return;
+      }
+      extendedTodoSchema = false;
+      todos = (legacyResult.data || []).map((todo) => ({
+        ...todo,
+        reminder_at: null,
+        completed_at: todo.completed ? todo.updated_at || todo.created_at : null
+      }));
+    } else {
+      extendedTodoSchema = true;
+      todos = extendedResult.data || [];
     }
-    todos = data || [];
     renderCalendarCard();
     renderTodoCard();
+    checkDueReminders();
   }
 
   function persistPreviewTodos() {
@@ -315,9 +338,10 @@
     const cells = Array.from({ length: first }, () => `<span class="${detailed ? "day " : ""}empty"></span>`);
     for (let number = 1; number <= total; number += 1) {
       const current = dateKey(new Date(year, month, number));
-      const dailyTasks = todos.filter((todo) => todo.due_date === current && !todo.completed);
-      const classes = [current === today ? "today" : "", dailyTasks.length ? "has-task" : ""].filter(Boolean).join(" ");
-      const visibleTasks = detailed ? dailyTasks.slice(0, 2).map((todo) => `<small class="calendar-task-dot">${escapeHtml(todo.title)}</small>`).join("") : "";
+      const dailyTasks = todos.filter((todo) => todo.due_date === current);
+      const activeTasks = dailyTasks.filter((todo) => !todo.completed);
+      const classes = [current === today ? "today" : "", dailyTasks.length ? "has-task" : "", dailyTasks.length && !activeTasks.length ? "all-complete" : ""].filter(Boolean).join(" ");
+      const visibleTasks = detailed ? dailyTasks.slice(0, 2).map((todo) => `<small class="calendar-task-dot ${todo.completed ? "done" : ""}">${escapeHtml(todo.title)}</small>`).join("") : "";
       const moreTasks = detailed && dailyTasks.length > 2
         ? `<small class="calendar-more">${escapeHtml(t("moreTasks").replace("{count}", String(dailyTasks.length - 2)))}</small>`
         : "";
@@ -365,6 +389,7 @@
 
   function openTodoDetail() {
     detailView = "todos";
+    todoListMode = "active";
     selectedCalendarDate = null;
     renderTodoDetail();
     openDialog($("#detailDialog"));
@@ -375,8 +400,27 @@
       <form id="todoForm" class="todo-form">
         <input id="todoTitle" aria-label="${escapeHtml(t("taskName"))}" maxlength="100" required placeholder="${escapeHtml(t("taskName"))}" />
         <input id="todoDue" aria-label="${escapeHtml(t("dueDate"))}" type="date" required value="${escapeHtml(dueDate)}" />
+        <input id="todoReminder" aria-label="${escapeHtml(t("reminderTime"))}" title="${escapeHtml(t("reminderTime"))}" type="datetime-local" />
         <button class="primary-button" type="submit">${escapeHtml(t("add"))}</button>
       </form>`;
+  }
+
+  function formatReminder(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat(lang === "zh" ? "zh-TW" : "en-US", {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+    }).format(date);
+  }
+
+  function formatCompletion(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat(lang === "zh" ? "zh-TW" : "en-US", {
+      year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+    }).format(date);
   }
 
   function todoListMarkup(items) {
@@ -387,7 +431,11 @@
           <div class="full-todo ${todo.completed ? "done" : ""}">
             <button class="todo-toggle" type="button" data-toggle-todo="${escapeHtml(todo.id)}" aria-label="Complete">${todo.completed ? "✓" : ""}</button>
             <span class="todo-title">${escapeHtml(todo.title)}</span>
-            <time class="todo-meta">${escapeHtml(todo.due_date)}</time>
+            <span class="todo-meta">
+              <time>${escapeHtml(todo.due_date)}</time>
+              ${todo.reminder_at ? `<small>${escapeHtml(t("reminder"))} ${escapeHtml(formatReminder(todo.reminder_at))}</small>` : ""}
+              ${todo.completed_at ? `<small>${escapeHtml(t("completedOn").replace("{date}", formatCompletion(todo.completed_at)))}</small>` : ""}
+            </span>
             <button class="delete-todo" type="button" data-delete-todo="${escapeHtml(todo.id)}" aria-label="${escapeHtml(t("delete"))}">×</button>
           </div>`).join("") : `<div class="empty-state">${escapeHtml(t("noTasks"))}</div>`}
       </div>`;
@@ -400,12 +448,27 @@
   }
 
   function renderTodoDetail() {
+    const activeTodos = todos.filter((todo) => !todo.completed);
+    const completedTodos = todos.filter((todo) => todo.completed);
+    const visibleTodos = todoListMode === "completed" ? completedTodos : activeTodos;
     $("#detailContent").innerHTML = `
       <p class="eyebrow">${escapeHtml(t("toDo"))}</p>
       <h2 class="detail-title">${escapeHtml(t("todoDetail"))}</h2>
       <p class="detail-subtitle">${escapeHtml(t("todoHint"))}</p>
       ${todoFormMarkup()}
-      ${todoListMarkup(todos)}`;
+      <div class="todo-tools">
+        <div class="todo-view-tabs" role="tablist">
+          <button type="button" role="tab" data-todo-mode="active" aria-selected="${todoListMode === "active"}">${escapeHtml(t("activeTasks"))} (${activeTodos.length})</button>
+          <button type="button" role="tab" data-todo-mode="completed" aria-selected="${todoListMode === "completed"}">${escapeHtml(t("completionHistory"))} (${completedTodos.length})</button>
+        </div>
+        <button class="notification-button" type="button" data-enable-notifications>${escapeHtml(t("enableNotifications"))}</button>
+      </div>
+      ${visibleTodos.length ? todoListMarkup(visibleTodos) : `<div class="empty-state">${escapeHtml(todoListMode === "completed" ? t("noCompletedTasks") : t("noTasks"))}</div>`}`;
+    $$('[data-todo-mode]', $("#detailContent")).forEach((button) => button.addEventListener("click", () => {
+      todoListMode = button.dataset.todoMode;
+      renderTodoDetail();
+    }));
+    $("[data-enable-notifications]", $("#detailContent")).addEventListener("click", enableDesktopNotifications);
     bindTodoEditor();
   }
 
@@ -443,6 +506,8 @@
     event.preventDefault();
     const title = $("#todoTitle").value.trim();
     const dueDate = $("#todoDue").value;
+    const reminderValue = $("#todoReminder").value;
+    const reminderAt = reminderValue ? new Date(reminderValue).toISOString() : null;
     if (!title || !dueDate) return;
     const submitButton = event.submitter;
     if (submitButton) {
@@ -451,22 +516,28 @@
     }
     try {
       if (previewSession) {
-        todos.push({ id: `local-${Date.now()}`, title, due_date: dueDate, completed: false });
+        todos.push({ id: `local-${Date.now()}`, title, due_date: dueDate, reminder_at: reminderAt, completed: false, completed_at: null });
         persistPreviewTodos();
       } else {
         if (!client || !currentUser) throw new Error(t("saveFailed"));
+        const insertValues = { user_id: currentUser.id, title, due_date: dueDate };
+        if (extendedTodoSchema) insertValues.reminder_at = reminderAt;
+        const selectFields = extendedTodoSchema
+          ? "id,title,due_date,completed,reminder_at,completed_at,created_at,updated_at"
+          : "id,title,due_date,completed,created_at,updated_at";
         const { data, error } = await client.from("todos")
-          .insert([{ user_id: currentUser.id, title, due_date: dueDate }])
-          .select("id,title,due_date,completed,created_at")
+          .insert([insertValues])
+          .select(selectFields)
           .single();
         if (error) throw error;
-        todos.push(data);
+        todos.push({ ...data, reminder_at: data.reminder_at || null, completed_at: data.completed_at || null });
       }
       if (detailView === "day") selectedCalendarDate = dueDate;
       refreshDetailContent();
       renderTodoCard();
       renderCalendarCard();
-      showToast(t("taskAdded"));
+      checkDueReminders();
+      showToast(reminderAt && !previewSession && !extendedTodoSchema ? t("reminderPendingSetup") : t("taskAdded"));
     } catch (error) {
       console.error("Unable to add todo", error);
       showToast(error?.message && error.message !== t("saveFailed") ? `${t("saveFailed")} ${error.message}` : t("saveFailed"));
@@ -482,13 +553,18 @@
     const todo = todos.find((item) => String(item.id) === String(id));
     if (!todo) return;
     const next = !todo.completed;
+    const completedAt = next ? new Date().toISOString() : null;
     if (!previewSession) {
       if (!client || !currentUser) { showToast(t("saveFailed")); return; }
-      const { error } = await client.from("todos").update({ completed: next }).eq("id", id).eq("user_id", currentUser.id);
+      const updates = { completed: next };
+      if (extendedTodoSchema) updates.completed_at = completedAt;
+      const { error } = await client.from("todos").update(updates).eq("id", id).eq("user_id", currentUser.id);
       if (error) { showToast(t("saveFailed")); return; }
     }
     todo.completed = next;
+    todo.completed_at = completedAt;
     persistPreviewTodos(); refreshDetailContent(); renderTodoCard(); renderCalendarCard();
+    if (next) showToast(t("taskCompleted"));
   }
 
   async function deleteTodo(id) {
@@ -499,6 +575,37 @@
     }
     todos = todos.filter((item) => String(item.id) !== String(id));
     persistPreviewTodos(); refreshDetailContent(); renderTodoCard(); renderCalendarCard(); showToast(t("taskDeleted"));
+  }
+
+  function reminderStorageKey(todo) {
+    const owner = previewSession ? "preview" : currentUser?.id || "guest";
+    return `bubble-reminder-shown:${owner}:${todo.id}:${todo.reminder_at}`;
+  }
+
+  function checkDueReminders() {
+    if (!currentUser && !previewSession) return;
+    const now = Date.now();
+    todos.filter((todo) => !todo.completed && todo.reminder_at && new Date(todo.reminder_at).getTime() <= now).forEach((todo) => {
+      const storageKey = reminderStorageKey(todo);
+      if (localStorage.getItem(storageKey)) return;
+      const message = t("reminderDue").replace("{title}", todo.title);
+      showToast(message);
+      if ("Notification" in window && Notification.permission === "granted") {
+        const notification = new Notification("Bubble Space", { body: message, tag: `bubble-todo-${todo.id}` });
+        notification.addEventListener("click", () => window.focus());
+      }
+      localStorage.setItem(storageKey, new Date().toISOString());
+    });
+  }
+
+  async function enableDesktopNotifications() {
+    if (!("Notification" in window)) {
+      showToast(t("reminderUnsupported"));
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    showToast(permission === "granted" ? t("reminderEnabled") : t("reminderDenied"));
+    if (permission === "granted") checkDueReminders();
   }
 
   function openSection(name) {
@@ -639,5 +746,6 @@
   setLanguage(lang);
   updateClock();
   setInterval(updateClock, 1000);
+  reminderTimer = setInterval(checkDueReminders, 30000);
   initializeAuth();
 })();

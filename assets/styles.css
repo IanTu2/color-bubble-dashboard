@@ -346,9 +346,11 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible, summary:foc
 .large-calendar button.day:hover { border-color: rgba(156,124,255,.48); background: rgba(156,124,255,.08); transform: translateY(-2px); }
 .large-calendar .day.today { border-color: rgba(255,213,106,.5); color: var(--yellow); }
 .large-calendar .day.has-task { border-color: rgba(255,117,195,.3); }
+.large-calendar .day.all-complete { border-color: rgba(255,255,255,.13); background: rgba(10,9,20,.22); }
 .large-calendar .day.empty { opacity: .25; }
 .large-calendar .weekday { min-height: auto; padding: 7px; color: rgba(255,255,255,.4); background: transparent; text-align: center; font-size: .72rem; }
 .calendar-task-dot { display: block; width: 100%; margin-top: 8px; padding: 5px 6px; overflow: hidden; border-radius: 7px; color: #231b38; background: #d8caff; font-size: .58rem; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-task-dot.done { color: rgba(255,255,255,.48); background: rgba(255,255,255,.07); text-decoration: line-through; }
 .calendar-more { display: block; margin-top: 5px; color: var(--aqua); font-size: .56rem; font-weight: 700; }
 .calendar-task-count { display: none; }
 .detail-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 20px; }
@@ -356,14 +358,21 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible, summary:foc
 .detail-back:hover { color: var(--ink); background: rgba(255,255,255,.08); }
 .month-controls { display: flex; gap: 8px; }
 .month-controls button { width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.05); cursor: pointer; }
-.todo-form { display: grid; grid-template-columns: 1fr 170px auto; gap: 10px; margin-bottom: 22px; }
+.todo-form { display: grid; grid-template-columns: minmax(180px, 1fr) 145px 205px auto; gap: 10px; margin-bottom: 22px; }
 .todo-form button { min-height: 49px; }
+.todo-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.todo-view-tabs { display: flex; gap: 6px; padding: 4px; border-radius: 14px; background: rgba(255,255,255,.04); }
+.todo-view-tabs button, .notification-button { min-height: 38px; padding: 0 13px; border: 1px solid transparent; border-radius: 11px; color: var(--muted); background: transparent; cursor: pointer; font-size: .76rem; }
+.todo-view-tabs button[aria-selected="true"] { border-color: rgba(156,124,255,.3); color: var(--ink); background: rgba(156,124,255,.16); }
+.notification-button { border-color: var(--line); }
+.notification-button:hover { color: var(--ink); background: rgba(255,255,255,.06); }
 .full-todo-list { display: grid; gap: 10px; }
 .full-todo { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 12px; padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; background: rgba(255,255,255,.03); }
 .full-todo.done .todo-title { color: var(--muted); text-decoration: line-through; }
 .todo-toggle { width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 8px; background: transparent; cursor: pointer; }
 .full-todo.done .todo-toggle { color: #17232b; border-color: var(--aqua); background: var(--aqua); }
-.todo-meta { color: var(--muted); font-size: .72rem; }
+.todo-meta { display: grid; gap: 3px; color: var(--muted); font-size: .72rem; text-align: right; }
+.todo-meta small { display: block; font-size: .62rem; white-space: nowrap; }
 .delete-todo { width: 35px; height: 35px; border: 0; border-radius: 11px; color: var(--danger); background: rgba(255,124,152,.08); cursor: pointer; }
 .empty-state { padding: 36px; border: 1px dashed var(--line); border-radius: 20px; color: var(--muted); text-align: center; }
 .coming-soon-panel { padding: 30px; border-radius: 24px; background: linear-gradient(140deg, rgba(156,124,255,.14), rgba(88,226,210,.06)); line-height: 1.7; }
@@ -410,8 +419,10 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible, summary:foc
   .calendar-task-dot, .calendar-more { display: none; }
   .calendar-task-count { position: absolute; right: 4px; bottom: 4px; display: grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; color: #251d38; background: var(--pink); font-size: .52rem; font-weight: 800; }
   .todo-form { grid-template-columns: 1fr; }
+  .todo-tools { align-items: stretch; flex-direction: column; }
+  .todo-view-tabs { display: grid; grid-template-columns: 1fr 1fr; }
   .full-todo { grid-template-columns: auto 1fr auto; }
-  .full-todo .todo-meta { grid-column: 2; }
+  .full-todo .todo-meta { grid-column: 2; text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {

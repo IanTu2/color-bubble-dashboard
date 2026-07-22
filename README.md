@@ -14,6 +14,8 @@
 - 登入後顯示「學習／英文／單字／遊戲／數學」多層選單
 - 月曆、今日／兩天內／七天內／30 天內待辦統計
 - 日期可展開查看當天全部項目，並直接新增、完成或刪除待辦
+- 待辦可設定提醒時間；網站開啟時提供站內提醒，經使用者授權後提供桌面通知
+- 完成項目會從進行中清單移出，保留在完成紀錄與月曆中，並以暗色刪除線呈現
 - 手機版依序顯示時鐘、月曆與待辦卡片，捲動時不互相遮蓋
 - 右下 AI 助理入口（目前顯示即將推出）
 - 尚未設定 Supabase 時，提供僅儲存於瀏覽器的體驗模式
@@ -24,6 +26,7 @@ GitHub Pages 是靜態網站，寄信與帳號資料由 Supabase 安全處理。
 
 1. 在 <https://supabase.com> 建立專案。
 2. 打開 **SQL Editor**，執行 `supabase/migrations/001_initial_schema.sql`。
+   - 已有資料庫再依編號執行後續 migration；提醒與完成紀錄使用 `002_add_todo_reminders_and_completion_history.sql`。
 3. 到 **Authentication → Email Templates**：
    - 在 **Confirm signup** 範本中顯示 `{{ .Token }}`，讓新使用者收到數字驗證碼。
    - 建議主旨改成「Bubble Space 驗證碼」。
@@ -42,6 +45,8 @@ window.APP_CONFIG = {
 ## Admin 帳號
 
 `wenchang10802270@gmail.com` 與一般帳號使用相同的 Email 驗證碼註冊流程。註冊成功後，migration 會自動把此 Email 的 `profiles.role` 記錄為 `admin`；目前 Admin 與一般會員使用相同功能。
+
+使用者回饋區已列入後續規劃，預計讓會員在站內送出意見，並集中顯示於 Admin 管理頁面。
 
 ## 保護既有 DB 資料
 
