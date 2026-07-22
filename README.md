@@ -31,8 +31,7 @@ GitHub Pages 是靜態網站，寄信與帳號資料由 Supabase 安全處理。
 ```js
 window.APP_CONFIG = {
   SUPABASE_URL: "https://你的專案.supabase.co",
-  SUPABASE_PUBLISHABLE_KEY: "你的 publishable key",
-  ADMIN_EMAIL: "wenchang10802270@gmail.com"
+  SUPABASE_PUBLISHABLE_KEY: "你的 publishable key"
 };
 ```
 
