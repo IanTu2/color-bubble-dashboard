@@ -1,7 +1,6 @@
 (() => {
   "use strict";
 
-  const ADMIN_EMAIL = (window.APP_CONFIG?.ADMIN_EMAIL || "wenchang10802270@gmail.com").toLowerCase();
   const CONFIGURED = Boolean(window.APP_CONFIG?.SUPABASE_URL && window.APP_CONFIG?.SUPABASE_PUBLISHABLE_KEY && window.supabase);
   const client = CONFIGURED
     ? window.supabase.createClient(window.APP_CONFIG.SUPABASE_URL, window.APP_CONFIG.SUPABASE_PUBLISHABLE_KEY)
@@ -39,7 +38,7 @@
       previewNotice: "目前是預覽模式，資料只會保存在這台裝置。", loginSuccess: "登入成功。", logoutSuccess: "已安全登出。",
       configNeeded: "帳號服務尚未設定。請先完成 README 的 Supabase 設定，或使用體驗登入。",
       codeSent: "驗證碼已寄到 {email}，請查看收件匣與垃圾郵件。", accountCreated: "帳號建立完成，歡迎加入！",
-      adminSignup: "管理員帳號須由後台預先建立，可免驗證信；完成後請直接使用登入頁。", invalidOtp: "請輸入 6 位數驗證碼。",
+      invalidOtp: "請輸入 6 位數驗證碼。",
       calendarDetail: "完整月曆", calendarHint: "有色標記代表當天有待辦事項。", todoDetail: "所有待辦事項",
       todoHint: "新增、完成或刪除項目；雲端啟用後會自動同步。", sectionSoon: "這個學習區已預留完成，內容將在下一次更新加入。",
       delete: "刪除", taskAdded: "待辦事項已新增。", taskDeleted: "待辦事項已刪除。", saveFailed: "儲存失敗，請稍後再試。",
@@ -59,7 +58,7 @@
       previewNotice: "Preview mode: data is saved only on this device.", loginSuccess: "You're signed in.", logoutSuccess: "You're safely logged out.",
       configNeeded: "Account service is not configured. Follow the Supabase setup in README, or use preview login.",
       codeSent: "We sent a code to {email}. Check your inbox and spam folder.", accountCreated: "Your account is ready. Welcome!",
-      adminSignup: "The admin account must be pre-created and confirmed in the backend. Then use the login tab.", invalidOtp: "Enter the 6-digit code.",
+      invalidOtp: "Enter the 6-digit code.",
       calendarDetail: "Full calendar", calendarHint: "Colored labels indicate due tasks.", todoDetail: "All to-dos",
       todoHint: "Add, complete, or delete items. Cloud sync starts when configured.", sectionSoon: "This learning area is reserved and ready for content in a future update.",
       delete: "Delete", taskAdded: "To-do added.", taskDeleted: "To-do deleted.", saveFailed: "Could not save. Please try again.",
@@ -398,7 +397,6 @@
     const email = $("#registerEmail").value.trim().toLowerCase();
     const displayName = $("#registerName").value.trim();
     const password = $("#registerPassword").value;
-    if (email === ADMIN_EMAIL) { showAuthMessage(t("adminSignup")); return; }
     const { error } = await client.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true, data: { display_name: displayName } }
