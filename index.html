@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/styles.css?v=20260722-otp2" />
+    <link rel="stylesheet" href="assets/styles.css?v=20260722-settings1" />
   </head>
   <body>
     <div class="moving-screen" aria-hidden="true">
@@ -60,13 +60,11 @@
         <p data-i18n="loginToUnlock">登入後即可使用學習選單、月曆與待辦事項。</p>
       </div>
 
-      <div class="language-control">
-        <span data-i18n="language">語言</span>
-        <div class="segmented" role="group" aria-label="語言切換">
-          <button class="language-option active" type="button" data-lang="zh">中文</button>
-          <button class="language-option" type="button" data-lang="en">EN</button>
-        </div>
-      </div>
+      <button id="settingsButton" class="settings-button" type="button">
+        <span class="settings-icon" aria-hidden="true">⚙</span>
+        <span data-i18n="settings">設定</span>
+        <span class="settings-arrow" aria-hidden="true">›</span>
+      </button>
     </aside>
     <button id="drawerBackdrop" class="drawer-backdrop" type="button" aria-label="關閉選單" hidden></button>
 
@@ -128,6 +126,34 @@
       <span class="robot-label">AI</span>
     </button>
 
+    <dialog id="settingsDialog" class="modal settings-modal">
+      <div class="settings-shell">
+        <button class="modal-close" type="button" data-close-dialog aria-label="關閉">×</button>
+        <p class="eyebrow">BUBBLE SPACE</p>
+        <h2 data-i18n="settingsTitle">顯示設定</h2>
+        <p class="settings-subtitle" data-i18n="settingsSubtitle">調整適合你的語言與閱讀大小。</p>
+
+        <section class="settings-section" aria-labelledby="languageSettingLabel">
+          <h3 id="languageSettingLabel" data-i18n="language">語言</h3>
+          <div class="segmented settings-segmented" role="group" aria-label="語言切換">
+            <button class="language-option active" type="button" data-lang="zh">中文</button>
+            <button class="language-option" type="button" data-lang="en">English</button>
+          </div>
+        </section>
+
+        <section class="settings-section" aria-labelledby="fontSizeLabel">
+          <div class="settings-row">
+            <h3 id="fontSizeLabel" data-i18n="fontSize">字體大小</h3>
+            <output id="fontSizeValue" for="fontSizeRange">100%</output>
+          </div>
+          <input id="fontSizeRange" class="font-size-range" type="range" min="85" max="125" step="5" value="100" aria-labelledby="fontSizeLabel" />
+          <div class="range-labels" aria-hidden="true"><span>A</span><span>A</span></div>
+          <p class="setting-hint" data-i18n="fontSizeHint">設定會保存在這個瀏覽器中。</p>
+          <button id="fontSizeReset" class="secondary-button settings-reset" type="button" data-i18n="resetFontSize">恢復標準大小</button>
+        </section>
+      </div>
+    </dialog>
+
     <dialog id="authDialog" class="modal auth-modal">
       <div class="modal-shell">
         <button class="modal-close" type="button" data-close-dialog aria-label="關閉">×</button>
@@ -183,7 +209,7 @@
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.55.0/dist/umd/supabase.min.js"></script>
-    <script src="config.js?v=20260722-otp2"></script>
-    <script src="assets/app.js?v=20260722-otp2"></script>
+    <script src="config.js?v=20260722-settings1"></script>
+    <script src="assets/app.js?v=20260722-settings1"></script>
   </body>
 </html>
