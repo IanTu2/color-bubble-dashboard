@@ -1,0 +1,194 @@
+/* Bubble Space layout polish: dashboard, robot snap and workspace resizing */
+
+/* Dashboard cards should physically shrink upward instead of only hiding content. */
+.member-dashboard {
+  align-items: start !important;
+}
+
+.dashboard-card {
+  align-self: start;
+  overflow: hidden;
+  transition:
+    height .34s cubic-bezier(.22,.82,.32,1),
+    min-height .34s cubic-bezier(.22,.82,.32,1),
+    padding .34s cubic-bezier(.22,.82,.32,1),
+    transform .2s ease,
+    box-shadow .2s ease;
+}
+
+.dashboard-card.is-collapsed {
+  height: var(--collapsed-card-height, 84px) !important;
+  min-height: 0 !important;
+  align-self: start !important;
+}
+
+.dashboard-card.is-collapsed .card-head {
+  margin-bottom: 0 !important;
+}
+
+.dashboard-card.is-collapsed > :not(.card-head) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.card-collapse {
+  transition: transform .25s ease, background .2s ease;
+}
+
+.dashboard-card:not(.is-collapsed) .card-collapse {
+  transform: rotate(0deg);
+}
+
+/* Logged-in dashboard uses a compact top clock strip. */
+body.member-dashboard-active .page-shell {
+  display: block;
+  padding-top: 94px;
+}
+
+body.member-dashboard-active .hero-card {
+  width: min(1180px, calc(100vw - 80px));
+  min-height: 0;
+  margin: 0 auto 18px;
+  padding: 17px 22px;
+  border-radius: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "kicker clock"
+    "date clock"
+    "footer footer";
+  align-items: center;
+  column-gap: 26px;
+  row-gap: 3px;
+  overflow: hidden;
+}
+
+body.member-dashboard-active .hero-card .hero-glow {
+  width: 240px;
+  height: 120px;
+  right: -40px;
+  top: -48px;
+  opacity: .45;
+}
+
+body.member-dashboard-active .hero-kicker {
+  grid-area: kicker;
+  margin: 0;
+  font-size: .76rem;
+  letter-spacing: .08em;
+}
+
+body.member-dashboard-active .clock {
+  grid-area: clock;
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  line-height: 1;
+  letter-spacing: -.04em;
+  text-align: right;
+}
+
+body.member-dashboard-active .date {
+  grid-area: date;
+  margin: 1px 0 0;
+  color: var(--muted);
+  font-size: .94rem;
+}
+
+body.member-dashboard-active .hero-footer {
+  grid-area: footer;
+  margin-top: 8px;
+  padding-top: 9px;
+  font-size: .78rem;
+}
+
+body.member-dashboard-active .member-dashboard {
+  width: min(1180px, calc(100vw - 80px));
+  margin: 0 auto;
+}
+
+/* The robot always uses a numeric left position so snapping can animate. */
+.robot-button.layout-polished-robot {
+  right: auto !important;
+  will-change: left, top;
+  transition:
+    left .46s cubic-bezier(.18,.82,.28,1),
+    top .22s ease,
+    transform .2s ease !important;
+}
+
+.robot-button.layout-polished-robot.is-dragging {
+  transition: none !important;
+}
+
+.robot-button.layout-polished-robot.is-snapping {
+  pointer-events: none;
+}
+
+/* Custom eight-direction resize handles. Native CSS resize is too small and is
+   easily blocked by iframe content. */
+.desktop-window {
+  min-width: 280px !important;
+  min-height: 200px !important;
+  resize: none !important;
+}
+
+.desktop-window.is-resizing {
+  user-select: none;
+  box-shadow: 0 18px 48px rgba(0,0,0,.42) !important;
+}
+
+.desktop-window.is-resizing iframe,
+.desktop-window.is-resizing textarea,
+.desktop-window.is-resizing input,
+.desktop-window.is-resizing button {
+  pointer-events: none !important;
+}
+
+.window-resize-handle {
+  position: absolute;
+  z-index: 60;
+  display: block;
+  touch-action: none;
+  user-select: none;
+}
+
+.window-resize-handle[data-resize-dir="n"] { top: 0; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+.window-resize-handle[data-resize-dir="s"] { bottom: 0; left: 14px; right: 14px; height: 10px; cursor: ns-resize; }
+.window-resize-handle[data-resize-dir="e"] { top: 14px; right: 0; bottom: 14px; width: 10px; cursor: ew-resize; }
+.window-resize-handle[data-resize-dir="w"] { top: 14px; left: 0; bottom: 14px; width: 10px; cursor: ew-resize; }
+.window-resize-handle[data-resize-dir="ne"] { top: 0; right: 0; width: 17px; height: 17px; cursor: nesw-resize; }
+.window-resize-handle[data-resize-dir="nw"] { top: 0; left: 0; width: 17px; height: 17px; cursor: nwse-resize; }
+.window-resize-handle[data-resize-dir="se"] { right: 0; bottom: 0; width: 20px; height: 20px; cursor: nwse-resize; }
+.window-resize-handle[data-resize-dir="sw"] { left: 0; bottom: 0; width: 20px; height: 20px; cursor: nesw-resize; }
+
+.window-resize-handle[data-resize-dir="se"]::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(255,255,255,.48);
+  border-bottom: 2px solid rgba(255,255,255,.48);
+  border-radius: 1px;
+  opacity: .55;
+  transition: opacity .18s ease;
+}
+
+.desktop-window:hover .window-resize-handle[data-resize-dir="se"]::after,
+.desktop-window.is-resizing .window-resize-handle[data-resize-dir="se"]::after {
+  opacity: 1;
+}
+
+.desktop-window.maximized .window-resize-handle,
+.desktop-window.minimized .window-resize-handle {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  body.member-dashboard-active .hero-card,
+  body.member-dashboard-active .member-dashboard {
+    width: calc(100vw - 40px);
+  }
+}
