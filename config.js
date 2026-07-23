@@ -7,7 +7,7 @@ window.APP_CONFIG = {
 
 // 額外功能採獨立資源載入，避免直接改動既有登入與 Supabase 核心流程。
 (() => {
-  const version = "20260723-stacked-drawer-music2";
+  const version = "20260723-todo-cleanup1";
   const styles = [
     "assets/todo-redesign.css",
     "assets/desktop-upgrade.css",
