@@ -7,7 +7,7 @@ window.APP_CONFIG = {
 
 // 額外功能採獨立資源載入，避免直接改動既有登入與 Supabase 核心流程。
 (() => {
-  const version = "20260723-music-v4-fix1";
+  const version = "20260723-music-v4-fix2";
   const styles = [
     "assets/todo-redesign.css",
     "assets/desktop-upgrade.css",
@@ -24,7 +24,7 @@ window.APP_CONFIG = {
     "assets/desktop-upgrade.js",
     "assets/desktop-hotfix.js",
     "assets/desktop-layout-bridge.js",
-    "assets/right-drawer-music.js",
+    "assets/right-drawer-search-v2.js",
     "assets/music-presets-v4.js"
   ];
 
