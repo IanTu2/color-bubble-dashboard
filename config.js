@@ -7,14 +7,17 @@ window.APP_CONFIG = {
 
 // 額外功能採獨立資源載入，避免直接改動既有登入與 Supabase 核心流程。
 (() => {
-  const version = "20260723-workspace-hotfix2";
+  const version = "20260723-layout-polish1";
   const styles = [
     "assets/todo-redesign.css",
     "assets/desktop-upgrade.css",
-    "assets/desktop-hotfix.css"
+    "assets/desktop-hotfix.css",
+    "assets/layout-polish.css"
   ];
   const scripts = [
     "assets/todo-redesign.js",
+    // 先註冊新版 capture handlers，避免舊視窗管理器攔截縮放與機器人拖曳。
+    "assets/layout-polish.js",
     "assets/desktop-upgrade.js",
     "assets/desktop-hotfix.js",
     "assets/desktop-layout-bridge.js"
