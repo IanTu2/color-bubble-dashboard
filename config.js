@@ -5,17 +5,27 @@ window.APP_CONFIG = {
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yqAWL9yzDkbNHXra3gm8sg_4NHRfhxX"
 };
 
-// 待辦事項新版介面採獨立資源載入，避免改動既有登入與 Supabase 核心流程。
+// 額外功能採獨立資源載入，避免直接改動既有登入與 Supabase 核心流程。
 (() => {
-  const version = "20260723-todo-layout1";
-  const style = document.createElement("link");
-  style.rel = "stylesheet";
-  style.href = `assets/todo-redesign.css?v=${version}`;
-  document.head.appendChild(style);
+  const version = "20260723-desktop-upgrade1";
+  const assets = [
+    ["style", `assets/todo-redesign.css?v=${version}`],
+    ["style", `assets/desktop-upgrade.css?v=${version}`],
+    ["script", `assets/todo-redesign.js?v=${version}`],
+    ["script", `assets/desktop-upgrade.js?v=${version}`]
+  ];
 
-  window.addEventListener("DOMContentLoaded", () => {
+  assets.forEach(([type, url]) => {
+    if (type === "style") {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = url;
+      document.head.appendChild(link);
+      return;
+    }
     const script = document.createElement("script");
-    script.src = `assets/todo-redesign.js?v=${version}`;
-    document.body.appendChild(script);
+    script.src = url;
+    script.defer = true;
+    document.head.appendChild(script);
   });
 })();
