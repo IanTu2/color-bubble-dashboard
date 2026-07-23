@@ -25,6 +25,7 @@
     let context = null;
     let master = null;
     let activePreset = "none";
+    let loopGeneration = 0;
     const nodes = new Set();
     const timers = new Set();
     const noiseBuffers = new Map();
@@ -40,33 +41,26 @@
       return context;
     }
 
-    function rememberNode(node) {
+    function track(node) {
       nodes.add(node);
-      const oldEnded = node.onended;
-      node.onended = (...args) => {
+      node.addEventListener?.("ended", () => {
         nodes.delete(node);
         try { node.disconnect?.(); } catch {}
-        if (typeof oldEnded === "function") oldEnded(...args);
-      };
+      }, { once: true });
       return node;
     }
 
-    function rememberTimer(id) {
-      timers.add(id);
-      return id;
-    }
-
-    function clearTimers() {
-      timers.forEach((id) => window.clearTimeout(id));
-      timers.clear();
-    }
-
-    function stopNodes() {
+    function stopAllNodes() {
       nodes.forEach((node) => {
         try { node.stop?.(); } catch {}
         try { node.disconnect?.(); } catch {}
       });
       nodes.clear();
+    }
+
+    function clearAllTimers() {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      timers.clear();
     }
 
     function setVolume(volume) {
@@ -78,72 +72,81 @@
       master.gain.linearRampToValueAtTime(target, ctx.currentTime + 0.08);
     }
 
-    function noiseBuffer(kind = "white", seconds = 2) {
+    function getNoiseBuffer(kind = "white", seconds = 2) {
       const ctx = ensureContext();
       if (!ctx) return null;
-      const cacheKey = `${kind}-${seconds}`;
-      if (noiseBuffers.has(cacheKey)) return noiseBuffers.get(cacheKey);
+      const key = `${kind}-${seconds}`;
+      if (noiseBuffers.has(key)) return noiseBuffers.get(key);
 
       const buffer = ctx.createBuffer(1, ctx.sampleRate * seconds, ctx.sampleRate);
       const data = buffer.getChannelData(0);
-      let last = 0;
+      let previous = 0;
       for (let index = 0; index < data.length; index += 1) {
         const white = Math.random() * 2 - 1;
         if (kind === "brown") {
-          last = (last + 0.02 * white) / 1.02;
-          data[index] = last * 3.1;
+          previous = (previous + white * 0.02) / 1.02;
+          data[index] = previous * 3.1;
         } else {
           data[index] = white;
         }
       }
-      noiseBuffers.set(cacheKey, buffer);
+      noiseBuffers.set(key, buffer);
       return buffer;
     }
 
-    function tone(frequency, start, duration, options = {}) {
+    function scheduleTone(frequency, start, duration, options = {}) {
       const ctx = ensureContext();
       if (!ctx || activePreset === "none") return;
-      const oscillator = rememberNode(ctx.createOscillator());
-      const gain = ctx.createGain();
+      const oscillator = track(ctx.createOscillator());
       const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+
       oscillator.type = options.type || "sine";
       oscillator.frequency.setValueAtTime(frequency, start);
       filter.type = "lowpass";
       filter.frequency.value = options.filter || 2800;
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, options.gain || 0.08), start + (options.attack || 0.025));
+      gain.gain.exponentialRampToValueAtTime(
+        Math.max(0.0002, options.gain || 0.08),
+        start + (options.attack || 0.025)
+      );
       gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
       oscillator.connect(filter).connect(gain).connect(master);
       oscillator.start(start);
       oscillator.stop(start + duration + 0.04);
     }
 
-    function percussionNoise(start, duration, frequency, gainValue) {
+    function scheduleNoiseHit(start, duration, frequency, gainValue) {
       const ctx = ensureContext();
       if (!ctx || activePreset === "none") return;
-      const source = rememberNode(ctx.createBufferSource());
+      const source = track(ctx.createBufferSource());
       const filter = ctx.createBiquadFilter();
       const gain = ctx.createGain();
-      source.buffer = noiseBuffer("white", 1);
+
+      source.buffer = getNoiseBuffer("white", 1);
       filter.type = "highpass";
       filter.frequency.value = frequency;
       gain.gain.setValueAtTime(gainValue, start);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
       source.connect(filter).connect(gain).connect(master);
       source.start(start);
       source.stop(start + duration + 0.03);
     }
 
-    function kick(start) {
+    function scheduleKick(start) {
       const ctx = ensureContext();
       if (!ctx || activePreset !== "rock") return;
-      const oscillator = rememberNode(ctx.createOscillator());
+      const oscillator = track(ctx.createOscillator());
       const gain = ctx.createGain();
+
       oscillator.type = "sine";
       oscillator.frequency.setValueAtTime(145, start);
       oscillator.frequency.exponentialRampToValueAtTime(42, start + 0.18);
       gain.gain.setValueAtTime(0.55, start);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+
       oscillator.connect(gain).connect(master);
       oscillator.start(start);
       oscillator.stop(start + 0.24);
@@ -153,7 +156,7 @@
       const ctx = ensureContext();
       if (!ctx) return;
       [174, 261.63, 329.63].forEach((frequency, index) => {
-        const oscillator = rememberNode(ctx.createOscillator());
+        const oscillator = track(ctx.createOscillator());
         const gain = ctx.createGain();
         oscillator.type = index === 0 ? "sine" : "triangle";
         oscillator.frequency.value = frequency;
@@ -163,85 +166,106 @@
       });
     }
 
-    function startNoise(kind) {
+    function startNoise(preset) {
       const ctx = ensureContext();
       if (!ctx) return;
-      const source = rememberNode(ctx.createBufferSource());
+      const source = track(ctx.createBufferSource());
       const filter = ctx.createBiquadFilter();
       const gain = ctx.createGain();
+
       source.loop = true;
-      source.buffer = noiseBuffer(kind === "rain" ? "white" : "brown", 4);
+      source.buffer = getNoiseBuffer(preset === "rain" ? "white" : "brown", 4);
       filter.type = "lowpass";
-      filter.frequency.value = kind === "rain" ? 3300 : 820;
-      filter.Q.value = kind === "rain" ? 0.42 : 0.28;
-      gain.gain.value = kind === "rain" ? 0.68 : 0.8;
+      filter.frequency.value = preset === "rain" ? 3300 : 820;
+      filter.Q.value = preset === "rain" ? 0.42 : 0.28;
+      gain.gain.value = preset === "rain" ? 0.68 : 0.8;
+
       source.connect(filter).connect(gain).connect(master);
       source.start();
     }
 
-    function scheduleLightBar(barIndex = 0) {
-      if (activePreset !== "light") return;
-      const ctx = ensureContext();
-      if (!ctx) return;
-      const start = ctx.currentTime + 0.06;
-      const progressions = [
-        [261.63, 329.63, 392.0],
-        [220.0, 261.63, 329.63],
-        [174.61, 220.0, 261.63],
-        [196.0, 246.94, 293.66]
-      ];
-      const chord = progressions[barIndex % progressions.length];
-      const arpeggio = [0, 1, 2, 1, 0, 1, 2, 1];
-
-      tone(chord[0] / 2, start, 3.85, { type: "sine", gain: 0.045, attack: 0.2, filter: 1200 });
-      arpeggio.forEach((noteIndex, step) => {
-        tone(chord[noteIndex], start + step * 0.48, 0.43, {
-          type: step % 2 ? "triangle" : "sine",
-          gain: 0.095,
-          attack: 0.035,
-          filter: 2400
-        });
-      });
-
-      rememberTimer(window.setTimeout(() => {
-        timers.delete(event);
-        scheduleLightBar(barIndex + 1);
-      }, 3600));
+    function scheduleRecurringBar(preset, interval, drawBar) {
+      const generation = loopGeneration;
+      const run = (barIndex = 0) => {
+        if (activePreset !== preset || generation !== loopGeneration) return;
+        drawBar(barIndex);
+        const timer = window.setTimeout(() => {
+          timers.delete(timer);
+          run(barIndex + 1);
+        }, interval);
+        timers.add(timer);
+      };
+      run();
     }
 
-    function scheduleRockBar(barIndex = 0) {
-      if (activePreset !== "rock") return;
-      const ctx = ensureContext();
-      if (!ctx) return;
-      const start = ctx.currentTime + 0.06;
-      const beat = 0.5;
-      const roots = [82.41, 98.0, 110.0, 73.42];
-      const root = roots[barIndex % roots.length];
+    function startLightMusic() {
+      scheduleRecurringBar("light", 3600, (barIndex) => {
+        const ctx = ensureContext();
+        if (!ctx) return;
+        const start = ctx.currentTime + 0.06;
+        const chords = [
+          [261.63, 329.63, 392.0],
+          [220.0, 261.63, 329.63],
+          [174.61, 220.0, 261.63],
+          [196.0, 246.94, 293.66]
+        ];
+        const chord = chords[barIndex % chords.length];
+        const pattern = [0, 1, 2, 1, 0, 1, 2, 1];
 
-      for (let step = 0; step < 8; step += 1) {
-        percussionNoise(start + step * beat / 2, 0.055, 6200, step % 2 ? 0.07 : 0.11);
-      }
-      [0, 2].forEach((beatIndex) => kick(start + beatIndex * beat));
-      [1, 3].forEach((beatIndex) => {
-        percussionNoise(start + beatIndex * beat, 0.16, 1500, 0.2);
-        tone(180, start + beatIndex * beat, 0.12, { type: "triangle", gain: 0.05, filter: 1800 });
-      });
-      for (let beatIndex = 0; beatIndex < 4; beatIndex += 1) {
-        tone(root * (beatIndex === 3 ? 1.5 : 1), start + beatIndex * beat, 0.38, {
-          type: "sawtooth",
-          gain: 0.105,
-          attack: 0.015,
-          filter: 760
+        scheduleTone(chord[0] / 2, start, 3.85, {
+          type: "sine",
+          gain: 0.045,
+          attack: 0.2,
+          filter: 1200
         });
-      }
+        pattern.forEach((noteIndex, step) => {
+          scheduleTone(chord[noteIndex], start + step * 0.48, 0.43, {
+            type: step % 2 ? "triangle" : "sine",
+            gain: 0.095,
+            attack: 0.035,
+            filter: 2400
+          });
+        });
+      });
+    }
 
-      rememberTimer(window.setTimeout(() => scheduleRockBar(barIndex + 1), 1750));
+    function startRockMusic() {
+      scheduleRecurringBar("rock", 1750, (barIndex) => {
+        const ctx = ensureContext();
+        if (!ctx) return;
+        const start = ctx.currentTime + 0.06;
+        const beat = 0.5;
+        const roots = [82.41, 98.0, 110.0, 73.42];
+        const root = roots[barIndex % roots.length];
+
+        for (let step = 0; step < 8; step += 1) {
+          scheduleNoiseHit(start + step * beat / 2, 0.055, 6200, step % 2 ? 0.07 : 0.11);
+        }
+        [0, 2].forEach((beatIndex) => scheduleKick(start + beatIndex * beat));
+        [1, 3].forEach((beatIndex) => {
+          scheduleNoiseHit(start + beatIndex * beat, 0.16, 1500, 0.2);
+          scheduleTone(180, start + beatIndex * beat, 0.12, {
+            type: "triangle",
+            gain: 0.05,
+            filter: 1800
+          });
+        });
+        for (let beatIndex = 0; beatIndex < 4; beatIndex += 1) {
+          scheduleTone(root * (beatIndex === 3 ? 1.5 : 1), start + beatIndex * beat, 0.38, {
+            type: "sawtooth",
+            gain: 0.105,
+            attack: 0.015,
+            filter: 760
+          });
+        }
+      });
     }
 
     function stop() {
       activePreset = "none";
-      clearTimers();
-      stopNodes();
+      loopGeneration += 1;
+      clearAllTimers();
+      stopAllNodes();
       if (master && context) {
         master.gain.cancelScheduledValues(context.currentTime);
         master.gain.linearRampToValueAtTime(0, context.currentTime + 0.06);
@@ -252,6 +276,7 @@
       stop();
       activePreset = preset || "none";
       if (activePreset === "none") return true;
+
       const ctx = ensureContext();
       if (!ctx) return false;
       try {
@@ -264,8 +289,8 @@
 
       if (activePreset === "focus") startFocus();
       else if (activePreset === "rain" || activePreset === "night") startNoise(activePreset);
-      else if (activePreset === "light") scheduleLightBar(0);
-      else if (activePreset === "rock") scheduleRockBar(0);
+      else if (activePreset === "light") startLightMusic();
+      else if (activePreset === "rock") startRockMusic();
       return true;
     }
 
@@ -285,6 +310,7 @@
     const saved = readJson(MUSIC_KEY, legacySaved);
     const legacySection = $("[data-music-settings]", shell);
     const legacySelect = legacySection && $("[data-music-preset]", legacySection);
+
     if (legacySelect) {
       legacySelect.value = "none";
       legacySelect.dispatchEvent(new Event("change", { bubbles: true }));
