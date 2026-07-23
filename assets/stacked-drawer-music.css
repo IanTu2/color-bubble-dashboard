@@ -1,0 +1,155 @@
+/* Stacked right drawer, compact signed-in clock, and richer music settings */
+
+/* The right drawer is a real sidebar: calendar above, to-do below. */
+.right-tools-drawer {
+  width: min(560px, calc(100vw - 92px)) !important;
+}
+
+.right-tools-body {
+  min-height: 0;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+}
+
+.right-tools-drawer #memberDashboard {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-content: start !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+.right-tools-drawer #calendarCard,
+.right-tools-drawer #todoCard {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto !important;
+  align-self: stretch !important;
+  overflow: hidden !important;
+}
+
+.right-tools-drawer #calendarCard {
+  min-height: 390px !important;
+}
+
+.right-tools-drawer #todoCard {
+  min-height: 285px !important;
+}
+
+.right-tools-drawer .mini-calendar,
+.right-tools-drawer .todo-preview,
+.right-tools-drawer .todo-buckets {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Signed-in home screen keeps only date and time, avoiding the previous grid overflow. */
+body.member-dashboard-active .page-shell {
+  display: block !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  padding: 92px 28px 28px !important;
+  overflow: hidden;
+}
+
+body.member-dashboard-active .hero-card {
+  display: flex !important;
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+  grid-template-areas: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 18px !important;
+  width: min(520px, calc(100vw - 120px)) !important;
+  max-width: 520px !important;
+  min-width: 360px !important;
+  min-height: 0 !important;
+  height: 76px !important;
+  margin: 0 auto !important;
+  padding: 14px 22px !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+}
+
+body.member-dashboard-active .hero-card .hero-glow,
+body.member-dashboard-active .hero-card .hero-kicker,
+body.member-dashboard-active .hero-card .hero-footer {
+  display: none !important;
+}
+
+body.member-dashboard-active .hero-card .date,
+body.member-dashboard-active .hero-card .clock {
+  grid-area: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  white-space: nowrap;
+}
+
+body.member-dashboard-active .hero-card .date {
+  order: 1;
+  padding-right: 18px;
+  border-right: 1px solid rgba(255,255,255,.13);
+  color: var(--muted);
+  font-size: .92rem !important;
+  line-height: 1.2;
+}
+
+body.member-dashboard-active .hero-card .clock {
+  order: 2;
+  color: var(--ink);
+  font-size: 1.75rem !important;
+  line-height: 1 !important;
+  letter-spacing: -.035em !important;
+  text-align: left !important;
+}
+
+/* Music v2 controls */
+.music-settings-v2 {
+  display: grid;
+  gap: 14px;
+}
+
+.music-settings-v2 .music-setting-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, .7fr);
+}
+
+.music-preset-description {
+  margin: 0;
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.55;
+}
+
+.music-v2-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  color: rgba(255,255,255,.82);
+  background: rgba(255,255,255,.055);
+  font-size: .72rem;
+}
+
+@media (max-width: 980px) {
+  .right-tools-drawer {
+    width: min(520px, calc(100vw - 76px)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.member-dashboard-active .hero-card {
+    min-width: 0 !important;
+    width: calc(100vw - 40px) !important;
+  }
+}
