@@ -7,7 +7,7 @@ window.APP_CONFIG = {
 
 // 額外功能採獨立資源載入，避免直接改動既有登入與 Supabase 核心流程。
 (() => {
-  const version = "20260723-music-v4-fix2";
+  const version = "20260723-workspace-learning1";
   const styles = [
     "assets/todo-redesign.css",
     "assets/desktop-upgrade.css",
@@ -15,7 +15,8 @@ window.APP_CONFIG = {
     "assets/layout-polish.css",
     "assets/right-drawer-music.css",
     "assets/stacked-drawer-music.css",
-    "assets/music-v4-fix.css"
+    "assets/music-v4-fix.css",
+    "assets/workspace-learning-v2.css"
   ];
   const scripts = [
     "assets/todo-redesign.js",
@@ -25,7 +26,8 @@ window.APP_CONFIG = {
     "assets/desktop-hotfix.js",
     "assets/desktop-layout-bridge.js",
     "assets/right-drawer-search-v2.js",
-    "assets/music-presets-v4.js"
+    "assets/music-presets-v4.js",
+    "assets/workspace-learning-v2.js"
   ];
 
   styles.forEach((path) => {
