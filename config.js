@@ -4,3 +4,18 @@ window.APP_CONFIG = {
   SUPABASE_URL: "https://sxxtebrzocxgtldvdamn.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_yqAWL9yzDkbNHXra3gm8sg_4NHRfhxX"
 };
+
+// 待辦事項新版介面採獨立資源載入，避免改動既有登入與 Supabase 核心流程。
+(() => {
+  const version = "20260723-todo-layout1";
+  const style = document.createElement("link");
+  style.rel = "stylesheet";
+  style.href = `assets/todo-redesign.css?v=${version}`;
+  document.head.appendChild(style);
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const script = document.createElement("script");
+    script.src = `assets/todo-redesign.js?v=${version}`;
+    document.body.appendChild(script);
+  });
+})();
