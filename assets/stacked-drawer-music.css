@@ -2,7 +2,7 @@
 
 /* The right drawer is a real sidebar: calendar above, to-do below. */
 .right-tools-drawer {
-  width: min(560px, calc(100vw - 92px)) !important;
+  width: min(460px, calc(100vw - 92px)) !important;
 }
 
 .right-tools-body {
@@ -143,7 +143,7 @@ body.member-dashboard-active .hero-card .clock {
 
 @media (max-width: 980px) {
   .right-tools-drawer {
-    width: min(520px, calc(100vw - 76px)) !important;
+    width: min(440px, calc(100vw - 76px)) !important;
   }
 }
 
