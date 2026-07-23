@@ -5,10 +5,6 @@
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const isEnglish = () => document.documentElement.lang?.startsWith("en");
   const text = (zh, en) => isEnglish() ? en : zh;
-  const todayKey = () => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  };
 
   let rangeDays = 1;
   let observerBusy = false;
@@ -135,11 +131,11 @@
     search.hidden = true;
 
     const eyebrow = $(".eyebrow", root);
-    const title = $(".detail-title", root);
-    const subtitle = $(".detail-subtitle", root);
     if (eyebrow) eyebrow.remove();
-    if (title) title.textContent = text("待辦事項", "To-do Items");
-    if (subtitle) subtitle.textContent = text("選擇查看範圍，或使用右上角新增與查詢。", "Choose a range, or use Add and Search in the top right.");
+    const firstTitle = $(".detail-title", root);
+    const firstSubtitle = $(".detail-subtitle", root);
+    firstTitle?.remove();
+    firstSubtitle?.remove();
 
     const head = document.createElement("div");
     head.className = "todo-overview-head";
@@ -147,15 +143,11 @@
 
     const range = document.createElement("div");
     range.className = "todo-range-grid";
-    range.innerHTML = [1, 2, 7, 30].map((days) => `<button type="button" class="todo-range-card ${days === rangeDays ? "active" : ""}" data-range-days="${days}"><strong>${text(`${days === 1 ? "一天" : days === 2 ? "兩天" : days === 7 ? "七天" : "三十天"}`, `${days} Day${days > 1 ? "s" : ""}`)}</strong><span>${text("從今天開始", "From today")}</span></button>`).join("");
+    range.innerHTML = [1, 2, 7, 30].map((days) => `<button type="button" class="todo-range-card ${days === rangeDays ? "active" : ""}" data-range-days="${days}"><strong>${text(days === 1 ? "一天" : days === 2 ? "兩天" : days === 7 ? "七天" : "三十天", `${days} Day${days > 1 ? "s" : ""}`)}</strong><span>${text("從今天開始", "From today")}</span></button>`).join("");
     const summary = document.createElement("p");
     summary.className = "todo-range-summary";
     summary.dataset.rangeSummary = "";
 
-    const firstTitle = $(".detail-title", root);
-    const firstSubtitle = $(".detail-subtitle", root);
-    firstTitle?.remove();
-    firstSubtitle?.remove();
     root.prepend(head, range, summary);
 
     $("[data-overview-add]", root).addEventListener("click", () => {
@@ -201,11 +193,18 @@
     });
   }
 
-  window.addEventListener("DOMContentLoaded", () => {
+  function initialize() {
     const root = $("#detailContent");
-    if (!root) return;
+    if (!root || root.dataset.todoRedesignObserver === "true") return;
+    root.dataset.todoRedesignObserver = "true";
     const observer = new MutationObserver(enhance);
     observer.observe(root, { childList: true, subtree: true });
     enhance();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", initialize, { once: true });
+  } else {
+    initialize();
+  }
 })();
