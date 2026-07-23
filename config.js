@@ -7,25 +7,29 @@ window.APP_CONFIG = {
 
 // 額外功能採獨立資源載入，避免直接改動既有登入與 Supabase 核心流程。
 (() => {
-  const version = "20260723-desktop-upgrade1";
-  const assets = [
-    ["style", `assets/todo-redesign.css?v=${version}`],
-    ["style", `assets/desktop-upgrade.css?v=${version}`],
-    ["script", `assets/todo-redesign.js?v=${version}`],
-    ["script", `assets/desktop-upgrade.js?v=${version}`]
+  const version = "20260723-workspace-hotfix1";
+  const styles = [
+    "assets/todo-redesign.css",
+    "assets/desktop-upgrade.css",
+    "assets/desktop-hotfix.css"
+  ];
+  const scripts = [
+    "assets/todo-redesign.js",
+    "assets/desktop-upgrade.js",
+    "assets/desktop-hotfix.js"
   ];
 
-  assets.forEach(([type, url]) => {
-    if (type === "style") {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = url;
-      document.head.appendChild(link);
-      return;
-    }
+  styles.forEach((path) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `${path}?v=${version}`;
+    document.head.appendChild(link);
+  });
+
+  scripts.forEach((path) => {
     const script = document.createElement("script");
-    script.src = url;
-    script.defer = true;
+    script.src = `${path}?v=${version}`;
+    script.async = false;
     document.head.appendChild(script);
   });
 })();
